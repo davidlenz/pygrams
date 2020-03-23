@@ -1,5 +1,7 @@
+import sys
 from math import log10, floor
 from os import path
+from traceback import print_tb
 
 import numpy as np
 from scipy.signal import savgol_filter
@@ -251,7 +253,21 @@ class Pipeline(object):
                                                          desc='smoothing quarterly timeseries with kalman filter',
                                                          leave=False, unit_scale=True,
                                                          total=len(self.__timeseries_quarterly)):
-                    _, _1, smooth_series_s, _intercept = StateSpaceModel(quarterly_values).run_smoothing()
+
+                    try:
+                        _, _1, smooth_series_s, _intercept = StateSpaceModel(quarterly_values).run_smoothing()
+                    except:
+                        print()
+                        print(f'Timeseries for term "{self.__term_ngrams[term_index]}" errored within StateSpaceModel;'
+                              f' time series="{quarterly_values}"')
+                        print('Please report these values for further investigation, thank-you')
+                        print()
+                        e, _e2, tb = sys.exc_info()
+                        print(f"Error '{e}' was triggered by:")
+                        print_tb(tb)
+                        print()
+                        print()
+                        smooth_series_s = np.zeros(shape=(2, len(quarterly_values)))
 
                     smooth_series = smooth_series_s[0].tolist()[0]
                     smooth_series_no_negatives = np.clip(smooth_series, a_min=0, a_max=None)
